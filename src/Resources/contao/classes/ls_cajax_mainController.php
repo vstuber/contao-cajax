@@ -2,7 +2,16 @@
 
 namespace LeadingSystems\Cajax;
 
+use Contao\BackendUser;
+use Contao\ContentModel;
+use Contao\Environment;
+use Contao\Input;
+use Contao\ModuleModel;
 use Contao\System;
+use DOMDocument;
+use DOMNode;
+use DOMNodeList;
+use DOMXPath;
 use LeadingSystems\Helpers\ls_helpers_controller;
 
 class ls_cajax_mainController {
@@ -39,12 +48,12 @@ class ls_cajax_mainController {
          * the session, which can happen if a previous cajax request could not be
          * finished due to an error.
          */
-        if (!\Environment::get('isAjaxRequest') && isset($_SESSION['ls_cajax'])) {
+        if (!Environment::get('isAjaxRequest') && isset($_SESSION['ls_cajax'])) {
             unset($_SESSION['ls_cajax']);
         }
 
-        if (\Input::get('cajaxRequestData') || \Input::post('cajaxRequestData')) {
-            $_SESSION['ls_cajax']['requestData'] = (\Input::get('cajaxRequestData') ?: \Input::post('cajaxRequestData')) ?: null;
+        if (Input::get('cajaxRequestData') || Input::post('cajaxRequestData')) {
+            $_SESSION['ls_cajax']['requestData'] = (Input::get('cajaxRequestData') ?: Input::post('cajaxRequestData')) ?: null;
 
             if (!is_array($_SESSION['ls_cajax']['requestData'])) {
                 /*
@@ -57,15 +66,15 @@ class ls_cajax_mainController {
             }
         }
 
-        if (\Input::get('cajaxRequestData')) {
-            \Environment::set('request', ls_helpers_controller::getUrl(false, array('cajaxRequestData')));
+        if (Input::get('cajaxRequestData')) {
+            Environment::set('request', ls_helpers_controller::getUrl(false, array('cajaxRequestData')));
         }
 
         if (
-                \Environment::get('isAjaxRequest')
+                Environment::get('isAjaxRequest')
             &&	(
-                    \Input::get('cajaxRequestData')
-                ||	\Input::post('cajaxRequestData')
+                    Input::get('cajaxRequestData')
+                ||	Input::post('cajaxRequestData')
                 )
         ) {
             $this->removeCacheBustingParameter();
@@ -86,7 +95,7 @@ class ls_cajax_mainController {
              * We solve this problem by not identifying an ls_cajax request
              * as an ajax request
              */
-            \Environment::set('isAjaxRequest', false);
+            Environment::set('isAjaxRequest', false);
             /*
              * <-
              */
@@ -94,7 +103,7 @@ class ls_cajax_mainController {
             $this->handleRenderingFilterInput();
         }
 
-        \Input::setGet('cajaxRequestData', null);
+        Input::setGet('cajaxRequestData', null);
     }
 
     /*
@@ -232,9 +241,9 @@ class ls_cajax_mainController {
             return $bln_isVisible;
         }
 
-        if ($obj_element instanceof \ContentModel) {
+        if ($obj_element instanceof ContentModel) {
             $str_elementType = 'contentElements';
-        } else if ($obj_element instanceof \ModuleModel) {
+        } else if ($obj_element instanceof ModuleModel) {
             $str_elementType = 'modules';
         } else {
             $str_elementType = 'articles';
@@ -338,7 +347,7 @@ class ls_cajax_mainController {
 
         if ($request && System::getContainer()->get('contao.routing.scope_matcher')->isBackendRequest($request))
         {
-            $obj_beUser = \BackendUser::getInstance();
+            $obj_beUser = BackendUser::getInstance();
             if ($obj_beUser->currentLogin === null) {
                 return 'NOT ALLOWED';
             }
@@ -347,7 +356,7 @@ class ls_cajax_mainController {
         /*
          * We create a dom document and load the original output html.
          */
-        $obj_dom = new \DOMDocument();
+        $obj_dom = new DOMDocument();
 
         /*
          * Since DOMDocument will remove whitespaces between tags, we need to preserve them
@@ -412,12 +421,12 @@ class ls_cajax_mainController {
 
         if ($tmp_ls_cajax['requestData']['requestedElementClass'] ?? null) {
             $arr_requestedElementClasses = array_map('trim', explode(',', $tmp_ls_cajax['requestData']['requestedElementClass']));
-            $obj_xpath = new \DOMXPath($obj_dom);
+            $obj_xpath = new DOMXPath($obj_dom);
             foreach ($arr_requestedElementClasses as $str_requestedElementClass) {
                 $obj_relevantNodeList = $obj_xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' ".$str_requestedElementClass." ')]");
-                if ($obj_relevantNodeList instanceof \DOMNode) {
+                if ($obj_relevantNodeList instanceof DOMNode) {
                     $str_content .= $obj_relevantNodeList->ownerDocument->saveHTML($obj_relevantNodeList);
-                } else if ($obj_relevantNodeList instanceof \DOMNodeList) {
+                } else if ($obj_relevantNodeList instanceof DOMNodeList) {
                     foreach ($obj_relevantNodeList as $obj_relevantNode) {
                         if ($obj_relevantNode !== null) {
                             # $str_content .= $this->getChildNodesAsHTMLString($obj_relevantNode);
@@ -465,7 +474,7 @@ class ls_cajax_mainController {
          *
          * We expect the random parameter to be a "valueless" parameter and identify it by this characteristic.
          */
-        $arr_requestParts = explode('?', \Environment::get('request'));
+        $arr_requestParts = explode('?', Environment::get('request'));
         $str_requestBase = $arr_requestParts[0];
         $str_queryString = $arr_requestParts[1];
 
@@ -478,6 +487,6 @@ class ls_cajax_mainController {
             }
         }
 
-        \Environment::set('request', $str_requestBase.(count($arr_queryStringPartsToKeep) ? '?'.implode('&', $arr_queryStringPartsToKeep) : ''));
+        Environment::set('request', $str_requestBase.(count($arr_queryStringPartsToKeep) ? '?'.implode('&', $arr_queryStringPartsToKeep) : ''));
     }
 }

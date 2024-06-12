@@ -30,7 +30,8 @@
   "extra": {
     "contao-manager-plugin": "LeadingSystems\\CajaxBundle\\ContaoManager\\Plugin",
     "branch-alias": {
-      "dev-master": "2.1.x-dev"
+      "dev-master": "2.1.x-dev",
+      "dev-develop-v2.x": "2.1.x-dev"
     }
   }
 }
